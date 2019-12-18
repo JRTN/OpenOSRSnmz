@@ -10,8 +10,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.util.Text;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -55,7 +58,7 @@ public class NmzBot extends Plugin
 
     private static int MAXIMUM_PRAYER_DOSE = 33;
 
-    private boolean drinkingOverload = false; //to prevent spam clicking
+    private boolean canDrinkOverload = false; //to prevent spam clicking
 
     @Provides
     NmzBotConfig provideConfig(ConfigManager configManager)
@@ -75,22 +78,37 @@ public class NmzBot extends Plugin
     {
         if(!isInNightmareZone()) return;
 
-        if(getHitpoints() == Stats.HITPOINTS.getMaximum(client) && !drinkingOverload)
+        if(getHitpoints() > 50 && canDrinkOverload)
         {
             drinkOverloadPotion();
-        } else if(getHitpoints() < Stats.HITPOINTS.getMaximum(client)) {
-            drinkingOverload = false; //finished drinking overload
         }
 
-        if(getPrayerPoints() <= Stats.PRAYER.getMaximum(client) - MAXIMUM_PRAYER_DOSE)
+        if(getPrayerPoints() <= config.prayerThreshold())
         {
             drinkPrayerPotion();
         }
     }
 
+    @Subscribe
+    private void onChatMessage(ChatMessage event)
+    {
+        if (event.getType() != ChatMessageType.GAMEMESSAGE
+                || !isInNightmareZone())
+        {
+            return;
+        }
+
+        String msg = Text.removeTags(event.getMessage()); //remove color
+
+        if (msg.contains("The effects of overload have worn off, and you feel normal again."))
+        {
+            canDrinkOverload = true;
+        }
+    }
+
     private void drinkPotion(int[] potionIds)
     {
-        WidgetItem potion = ExtUtils.getFirstItem(potionIds, client);
+        WidgetItem potion = ExtUtils.getFirstInventoryItem(potionIds, client);
         if(potion == null) return;
         Rectangle potionBounds = potion.getCanvasBounds();
         ExtUtils.clickBounds(potionBounds);
@@ -104,7 +122,7 @@ public class NmzBot extends Plugin
     private void drinkOverloadPotion()
     {
         drinkPotion(OVERLOAD_POTIONS);
-        drinkingOverload = true; //started drinking overload
+        canDrinkOverload = false; //started drinking overload
     }
 
     private boolean isInNightmareZone()

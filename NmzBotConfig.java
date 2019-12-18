@@ -8,26 +8,14 @@ import net.runelite.client.config.ConfigItem;
 public interface NmzBotConfig extends Config {
 
     @ConfigItem(
-            keyName = "randLow",
-            name = "Minimum MS Delay",
-            description = "Dont set this too high.",
+            keyName = "prayerThreshold",
+            name = "Prayer points to drink at",
+            description = "Set this between 10 and 60 for best results",
             titleSection = "config",
             position = 0
     )
-    default int randLow()
+    default int prayerThreshold()
     {
         return 60;
-    }
-
-    @ConfigItem(
-            keyName = "randLower",
-            name = "Maximum MS Delay",
-            description = "Dont set this too high.",
-            titleSection = "config",
-            position = 1
-    )
-    default int randHigh()
-    {
-        return 80;
     }
 }
