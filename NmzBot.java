@@ -10,12 +10,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.events.ChatMessage;
+import net.runelite.api.Varbits;
 import net.runelite.api.events.GameTick;
-import net.runelite.api.util.Text;
-import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
@@ -55,10 +52,9 @@ public class NmzBot extends Plugin
     private static final int[] NMZ_MAP_REGION = {9033};
     private static final int[] PRAYER_POTIONS = {143, 141, 139, 2434};
     private static final int[] OVERLOAD_POTIONS = {11733, 11732, 11731, 11730};
+    private static final int[] ROCK_CAKE = {7510};
 
     private static int MAXIMUM_PRAYER_DOSE = 33;
-
-    private boolean canDrinkOverload = false; //to prevent spam clicking
 
     @Provides
     NmzBotConfig provideConfig(ConfigManager configManager)
@@ -78,51 +74,23 @@ public class NmzBot extends Plugin
     {
         if(!isInNightmareZone()) return;
 
-        if(getHitpoints() > 50 && canDrinkOverload)
+        if(getHitpoints() > 50 && !isOverloaded())
         {
-            drinkOverloadPotion();
+            ExtUtils.clickInventoryItem(OVERLOAD_POTIONS);
         }
-
-        if(getPrayerPoints() <= config.prayerThreshold())
+        else if(getPrayerPoints() <= config.prayerThreshold())
         {
-            drinkPrayerPotion();
+            ExtUtils.clickInventoryItem(PRAYER_POTIONS);
         }
-    }
-
-    @Subscribe
-    private void onChatMessage(ChatMessage event)
-    {
-        if (event.getType() != ChatMessageType.GAMEMESSAGE
-                || !isInNightmareZone())
+        else if(config.guzzleRockCake() && isOverloaded() && getHitpoints() == config.rockCakeThreshold())
         {
-            return;
-        }
-
-        String msg = Text.removeTags(event.getMessage()); //remove color
-
-        if (msg.contains("The effects of overload have worn off, and you feel normal again."))
-        {
-            canDrinkOverload = true;
+            ExtUtils.clickInventoryItem(ROCK_CAKE);
         }
     }
 
-    private void drinkPotion(int[] potionIds)
+    private boolean isOverloaded()
     {
-        WidgetItem potion = ExtUtils.getFirstInventoryItem(potionIds, client);
-        if(potion == null) return;
-        Rectangle potionBounds = potion.getCanvasBounds();
-        ExtUtils.clickBounds(potionBounds);
-    }
-
-    private void drinkPrayerPotion()
-    {
-        drinkPotion(PRAYER_POTIONS);
-    }
-
-    private void drinkOverloadPotion()
-    {
-        drinkPotion(OVERLOAD_POTIONS);
-        canDrinkOverload = false; //started drinking overload
+        return client.getVar(Varbits.NMZ_OVERLOAD) > 0;
     }
 
     private boolean isInNightmareZone()

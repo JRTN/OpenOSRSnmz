@@ -25,7 +25,7 @@ public class ExtUtils
     @Setter(AccessLevel.PUBLIC)
     private static ConfigManager configManager;
 
-    public static List<WidgetItem> getInventoryItems(int[] itemIds, Client client)
+    public static List<WidgetItem> getInventoryItems(int[] itemIds)
     {
         Widget inventoryWidget = client.getWidget(WidgetInfo.INVENTORY);
 
@@ -49,11 +49,19 @@ public class ExtUtils
         return listToReturn;
     }
 
-    public static WidgetItem getFirstInventoryItem(int[] itemIds, Client client)
+    public static WidgetItem getFirstInventoryItem(int[] itemIds)
     {
-        List<WidgetItem> items = getInventoryItems(itemIds, client);
+        List<WidgetItem> items = getInventoryItems(itemIds);
         if(items.isEmpty()) return null;
         return items.get(0);
+    }
+
+
+    public static void clickInventoryItem(int[] itemIds) {
+        WidgetItem item = getFirstInventoryItem(itemIds);
+        if(item == null) return;
+        Rectangle itemBounds = item.getCanvasBounds();
+        clickBounds(itemBounds);
     }
 
     public static void clickBounds(Rectangle rectangle)
