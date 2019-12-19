@@ -45,13 +45,11 @@ public class NmzBot extends Plugin
     private MenuManager menuManager;
     @Inject
     private ItemManager itemManager;
-    private BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(1);
-    private ThreadPoolExecutor executorService = new ThreadPoolExecutor(1, 1, 25, TimeUnit.SECONDS, queue,
-            new ThreadPoolExecutor.DiscardPolicy());
 
     private static final int[] NMZ_MAP_REGION = {9033};
     private static final int[] PRAYER_POTIONS = {143, 141, 139, 2434};
     private static final int[] OVERLOAD_POTIONS = {11733, 11732, 11731, 11730};
+    private static final int[] ABSORPTION_POTIONS = {11734, 11735, 11736, 11737};
     private static final int[] ROCK_CAKE = {7510};
 
     private static int MAXIMUM_PRAYER_DOSE = 33;
@@ -78,14 +76,20 @@ public class NmzBot extends Plugin
         {
             ExtUtils.clickInventoryItem(OVERLOAD_POTIONS);
         }
-        else if(getPrayerPoints() <= config.prayerThreshold())
+        else if(config.usePrayerPotions() && getPrayerPoints() <= config.prayerThreshold())
         {
             ExtUtils.clickInventoryItem(PRAYER_POTIONS);
         }
-        else if(config.guzzleRockCake() && isOverloaded() && getHitpoints() == config.rockCakeThreshold())
+        else if(config.useAbsorptionPotions() && getAbsorptionAmount() <= config.absorptionThreshold())
+        {
+            ExtUtils.clickInventoryItem(ABSORPTION_POTIONS);
+        }
+        else if(config.guzzleRockCake() && client.getVar(Varbits.NMZ_OVERLOAD) < 20
+                && getHitpoints() >= config.rockCakeThreshold())
         {
             ExtUtils.clickInventoryItem(ROCK_CAKE);
         }
+
     }
 
     private boolean isOverloaded()
@@ -107,4 +111,6 @@ public class NmzBot extends Plugin
     {
         return Stats.HITPOINTS.getValue(client);
     }
+
+    private int getAbsorptionAmount() { return client.getVar(Varbits.NMZ_ABSORPTION); }
 }
